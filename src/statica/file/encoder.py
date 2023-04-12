@@ -18,13 +18,15 @@ class FileEncoder:
         self._is_encrypted = is_encrypted
         self._is_compressed = is_compressed
 
+        os.remove(self._out_file)
+
     def encode(self, to_h264=False):
         video = cv2.VideoWriter(self._out_file, cv2.VideoWriter_fourcc(
             *'MP4V'), self._fps, (self._video_width, self._video_height))
         frame = self._get_empty_frame()
         ptr_x, ptr_y = 0, 0
 
-        self._set_file_meta(video)
+        # self._set_file_meta(video)
 
         with open(self._in_file, 'rb') as fd:
             while True:
@@ -53,8 +55,9 @@ class FileEncoder:
         video.release()
 
         if to_h264:
-            ffmpeg.input(self._out_file).output(self._out_file,
+            ffmpeg.input(self._out_file).output(f'tmp_{self._out_file}',
                                                 vcodec='libx264', pix_fmt='yuv420p').run(overwrite_output=True)
+            os.rename(f'tmp_{self._out_file}', self._out_file)
 
     def _set_file_meta(self, video):
         file_size = os.stat(self._in_file).st_size
