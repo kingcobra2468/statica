@@ -18,7 +18,10 @@ class FileEncoder:
         self._is_encrypted = is_encrypted
         self._is_compressed = is_compressed
 
-        os.remove(self._out_file)
+        try:
+            os.remove(self._out_file)
+        except Exception:
+            pass
 
     def encode(self, to_h264=False):
         video = cv2.VideoWriter(self._out_file, cv2.VideoWriter_fourcc(
@@ -26,7 +29,7 @@ class FileEncoder:
         frame = self._get_empty_frame()
         ptr_x, ptr_y = 0, 0
 
-        # self._set_file_meta(video)
+        self._set_file_meta(video)
 
         with open(self._in_file, 'rb') as fd:
             while True:
