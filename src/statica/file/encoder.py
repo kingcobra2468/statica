@@ -18,10 +18,8 @@ class FileEncoder:
         self._is_encrypted = is_encrypted
         self._is_compressed = is_compressed
 
-        try:
+        if os.path.exists(self._out_file):
             os.remove(self._out_file)
-        except Exception:
-            pass
 
     def encode(self, to_h264=False):
         video = cv2.VideoWriter(self._out_file, cv2.VideoWriter_fourcc(
