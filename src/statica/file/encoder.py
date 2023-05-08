@@ -10,7 +10,34 @@ from statica.file.exceptions import InvalidPixelFrameDimensionsError
 
 @cython.cclass
 class FileEncoder:
+    """FileEncoder encodes a file into video form.
+    """
+
     def __init__(self, in_file, out_file, video_width=720, video_height=1280, fps=30, pixel_width=16, pixel_height=10, buffer_frames=100, is_encrypted=False, is_compressed=False):
+        """Constructor.
+
+        Args:
+            in_file (str): the path to the input file.
+            out_file (str): the path to the output video file.
+            video_width (int, optional): the width resolution for the
+            output video. Defaults to 720.
+            video_height (int, optional): the height resolution for the
+            output video. Defaults to 1280.
+            fps (int, optional): the output video fps. Defaults to 30.
+            pixel_width (int, optional): the pixel width for each data
+            bit. Defaults to 16.
+            pixel_height (int, optional): the pixel height for each data
+            bit. Defaults to 10.
+            buffer_frames (int, optional): the number of frames to process
+            at each chunk. Defaults to 100.
+            is_encrypted (bool, optional): whether to encrypt the output
+            data. Defaults to False.
+            is_compressed (bool, optional): whether to compress the output
+            data. Defaults to False.
+
+        Raises:
+            InvalidPixelFrameDimensionsError: thrown if pixel/video frame size are not compatible.
+        """
         self._in_file = in_file
         self._out_file = out_file
         self._video_width = video_width
@@ -35,6 +62,12 @@ class FileEncoder:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def encode(self, to_h264=False):
+        """Encodes the input file into its video form.
+
+        Args:
+            to_h264 (bool, optional): whether to encode the output video
+            in x264 format. Defaults to False.
+        """
         video = cv2.VideoWriter(self._out_file, cv2.VideoWriter_fourcc(
             *'MP4V'), self._fps, (self._video_width, self._video_height))
 
@@ -42,28 +75,36 @@ class FileEncoder:
 
         with open(self._in_file, 'rb') as fd:
             while True:
-                byte_list = fd.read(self._buffer_size)
-                if not byte_list:
+                bytes_buffer = fd.read(self._buffer_size)
+                # end of file reached
+                if not bytes_buffer:
                     break
 
-                z = [(255, 255, 255) if b == 1 else (0, 0, 0) for y in byte_list for b in [
+                # explode each bit (little endian format) in the buffer while setting
+                # 1's to black (255, 255, 255) and 0's to white (0, 0, 0)
+                bit_buffer = [(255, 255, 255) if b == 1 else (0, 0, 0) for y in bytes_buffer for b in [
                     y & 1, y >> 1 & 1, y >> 2 & 1, y >> 3 & 1, y >> 4 & 1, y >> 5 & 1, y >> 6 & 1, y >> 7 & 1]]
-                arr = np.array(z, dtype=np.uint8)
-                del z
+                frames = np.array(bit_buffer, dtype=np.uint8)
+                del bit_buffer
 
-                if arr.shape[0] % self._frame_length:
-                    arr = np.pad(arr, ((
-                        0, self._frame_length - (arr.shape[0] % self._frame_length)), (0, 0)),  'constant')
+                # pad the frames buffer if its not possible to  write n frames of size
+                # (width, height, 3). This is needed for the last read buffer chunk since it might
+                # be smaller than buffer size.
+                if frames.shape[0] % self._frame_length:
+                    frames = np.pad(frames, ((
+                        0, self._frame_length - (frames.shape[0] % self._frame_length)), (0, 0)),  'constant')
 
-                arr = arr.repeat(self._pixel_width, axis=0).reshape(-1,
-                                                                    arr.shape[0] // self._video_width, self._video_width, 3)
-                arr = arr.repeat(self._pixel_height, axis=1)
-
-                arr = arr.reshape(
+                # explode each bit to have width pixel_width
+                frames = frames.repeat(self._pixel_width, axis=0).reshape(-1,
+                                                                          frames.shape[0] // self._video_width, self._video_width, 3)
+                # explode each bit to have height pixel_height
+                frames = frames.repeat(self._pixel_height, axis=1)
+                # slice up the frames buffer into individual frames
+                frames = frames.reshape(
                     (-1, self._video_height, self._video_width, 3))
 
-                for f in range(arr.shape[0]):
-                    video.write(arr[f])
+                for i in range(frames.shape[0]):
+                    video.write(frames[i])
 
         video.release()
 
@@ -75,6 +116,11 @@ class FileEncoder:
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def _set_file_meta(self, video):
+        """Sets video meta (e.g. input file length) header for decode process.
+
+        Args:
+            video (cv2.VideoWriter): the video output stream.
+        """
         bit_offset: cython.int
         bit: cython.int
         byte: cython.int
