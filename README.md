@@ -21,6 +21,15 @@ colors around. As a result, Statica allows for variable width/height
 pixel sizes, which if set to larger values, will offer protection against
 corruption. 
 
+### Sample Frame
+
+Sample frame from the encoded video showing how the file has been encoded. 
+
+<p align="center">
+  <kbd><img src="./images/frame.png" width="200" height="350" />
+</kbd>
+</p>
+
 ## Installation
 
 To install and run Statica, follow the following steps:
