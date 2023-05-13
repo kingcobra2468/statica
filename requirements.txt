@@ -1,0 +1,5 @@
+Cython==0.29.34
+numpy==1.19.5
+scikit-image==0.17.2
+ffmpeg-python==0.2.0
+opencv-python==4.6.0.66
