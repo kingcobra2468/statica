@@ -5,14 +5,33 @@ import cv2
 import ffmpeg
 import cython
 
+cimport numpy as np
+
+
 from statica.file.exceptions import InvalidPixelFrameDimensionsError
 
+DTYPE = np.uint8
 
-@cython.cclass
-class FileEncoder:
+ctypedef np.uint8_t DTYPE_t
+
+
+cdef class FileEncoder:
     """FileEncoder encodes a file into video form.
     """
-
+    cdef str _in_file 
+    cdef str _out_file
+    cdef int _video_width
+    cdef int _video_height
+    cdef int _fps
+    cdef int _pixel_width
+    cdef int _pixel_height
+    cdef int _buffer_size
+    cdef int _is_encrypted
+    cdef int _pixels_pw
+    cdef int _pixels_ph
+    cdef int _is_compressed
+    cdef int _frame_length
+    
     def __init__(self, in_file, out_file, video_width=720, video_height=1280, fps=30, pixel_width=16, pixel_height=10, buffer_frames=100, is_encrypted=False, is_compressed=False):
         """Constructor.
 
@@ -48,7 +67,7 @@ class FileEncoder:
         self._frame_length = (
             ((video_width // pixel_width) * (video_height // pixel_height)))
         self._buffer_size = buffer_frames * \
-            (((video_width // pixel_width) * (video_height // pixel_height)) / 8)
+            (((video_width // pixel_width) * (video_height // pixel_height)) // 8)
         self._is_encrypted = is_encrypted
         self._is_compressed = is_compressed
 
@@ -59,9 +78,12 @@ class FileEncoder:
         if os.path.exists(self._out_file):
             os.remove(self._out_file)
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def encode(self, to_h264=False):
+        if cython.compiled:
+            print("Yep, I'm compiled.")
+        else:
+            print("Just a lowly interpreted script.")
+
+    cpdef void encode(self, to_h264=False):
         """Encodes the input file into its video form.
 
         Args:
@@ -113,24 +135,25 @@ class FileEncoder:
                                                 vcodec='libx264', pix_fmt='yuv420p').global_args('-an').run(overwrite_output=True)
             os.rename(f'tmp_{self._out_file}', self._out_file)
 
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def _set_file_meta(self, video):
+    cdef void _set_file_meta(self, video):
         """Sets video meta (e.g. input file length) header for decode process.
 
         Args:
             video (cv2.VideoWriter): the video output stream.
         """
-        bit_offset: cython.int
-        bit: cython.int
-        byte: cython.int
+        cdef int bit_offset
+        cdef int bit
+        cdef int byte
+        cdef int file_size
+        cdef int ptr_x
+        cdef int ptr_y
 
-        file_size: cython.int = os.stat(self._in_file).st_size
+        file_size = os.stat(self._in_file).st_size
         file_size_str = bytes(f'{file_size}!', 'ascii')
 
         frame = self._get_empty_frame()
-        ptr_x: cython.int = 0
-        ptr_y: cython.int = 0
+        ptr_x = 0
+        ptr_y = 0
 
         for byte in file_size_str:
             for bit_offset in range(8):
@@ -150,5 +173,5 @@ class FileEncoder:
 
         video.write(frame)
 
-    def _get_empty_frame(self):
+    cdef np.ndarray _get_empty_frame(self):
         return np.zeros((self._video_height, self._video_width, 3), np.uint8)
