@@ -1,12 +1,26 @@
 import skimage.measure
 import numpy as np
 import cv2
-import cython
 
+cimport numpy as np
 
-class FileDecoder:
+DTYPE = np.uint8
+
+ctypedef np.uint8_t DTYPE_t
+
+cdef class FileDecoder:
     """FileDecoder decodes input video into the actual file. 
     """
+    cdef str _in_file 
+    cdef str _out_file
+    cdef int _video_width
+    cdef int _video_height
+    cdef int _fps
+    cdef int _pixel_width
+    cdef int _pixel_height
+    cdef int _buffer_size
+    cdef int _is_encrypted
+    cdef int _is_compressed
 
     def __init__(self, in_file, out_file, video_width=720, video_height=1280, pixel_width=16, pixel_height=10, buffer_size=450, is_encrypted=False, is_compressed=False):
         """Constructor.
@@ -30,21 +44,23 @@ class FileDecoder:
             is_compressed (bool, optional): whether to compress the output
             data. Defaults to False.
         """
-        self._in_file: str = in_file
-        self._out_file: str = out_file
-        self._video_width: cython.int = video_width
-        self._video_height: cython.int = video_height
-        self._pixel_width: cython.int = pixel_width
-        self._pixel_height: cython.int = pixel_height
-        self._buffer_size: cython.int = buffer_size
-        self._is_encrypted: cython.int = is_encrypted
-        self._is_compressed: cython.int = is_compressed
+        self._in_file = in_file
+        self._out_file = out_file
+        self._video_width = video_width
+        self._video_height = video_height
+        self._pixel_width = pixel_width
+        self._pixel_height = pixel_height
+        self._buffer_size = buffer_size
+        self._is_encrypted = is_encrypted
+        self._is_compressed = is_compressed
 
-    def decode(self):
+    cpdef void decode(self):
         """Decodes the input video file into its normal file form.
         """
+        cdef int file_size
+
         video = cv2.VideoCapture(self._in_file)
-        file_size: cython.int = self._get_file_size(video)
+        file_size = self._get_file_size(video)
         buffer = np.zeros((self._buffer_size, self._video_height,
                           self._video_width, 3), dtype=np.uint)
         actual_frames = 0
@@ -88,7 +104,7 @@ class FileDecoder:
                 # number of bytes left to read
                 file_size -= len(frames)
 
-    def _get_file_size(self, video):
+    cdef int _get_file_size(self, video):
         """Retrieves the file size from the video meta.
 
         Args:
@@ -97,10 +113,14 @@ class FileDecoder:
         Returns:
             int: the output file size.
         """
-        file_size: str = ''
+        cdef str file_size
+        cdef int ptr_x
+        cdef int ptr_y
+
+        file_size = ''
         _, frame = video.read()
-        ptr_x: cython.int = 0
-        ptr_y: cython.int = 0
+        ptr_x = 0
+        ptr_y = 0
 
         while True:
             byte = 0
