@@ -33,5 +33,6 @@ Sample frame from the encoded video showing how the file has been encoded.
 ## Installation
 
 To install and run Statica, follow the following steps:
-1. Ensure that Python3.7+ is installed.
+1. Ensure that `>=Python3.6.9` is installed.
 2. Install dependencies with `pip3 install -r requirements.txt`.
+3. Build and install Statica with `make clean dist`.
