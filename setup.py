@@ -2,9 +2,6 @@
 from setuptools import setup, Extension
 import os
 
-from Cython.Build import cythonize
-
-
 try:
     from Cython.Build import cythonize
 except ImportError:
@@ -24,7 +21,7 @@ def no_cythonize(extensions, **_ignore):
                 sfile = path + ext
             sources.append(sfile)
         extension.sources[:] = sources
-    print(extensions)
+
     return extensions
 
 

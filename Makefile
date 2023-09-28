@@ -16,9 +16,9 @@ install-from-source: dist
 
 clean:
 	$(RM) -r build dist src/*.egg-info
-	$(RM) -r src/statica/file{encoder.c,decoder.c}
+	$(RM) -r src/statica/file/{encoder.c,decoder.c}
 	$(RM) -r .pytest_cache
 	find . -name __pycache__ -exec rm -r {} +
 
 uninstall:
-	pip uninstall statica
+	pip3 uninstall statica
