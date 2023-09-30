@@ -30,7 +30,7 @@ def test_file_encode(data_path):
 def test_file_encode_h264(data_path):
     input_image_file = str(data_path / 'image.png')
     encoded_image_path = str(data_path / 'image_encoded_h264.mp4')
-    gen_encoded_image_path = 'gen_image_encoded_h264.mp4'
+    gen_encoded_image_path = str(data_path / 'gen_image_encoded_h264.mp4')
 
     file_encoder = FileEncoder(input_image_file, gen_encoded_image_path)
     file_encoder.encode(True)
