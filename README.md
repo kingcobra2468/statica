@@ -4,6 +4,7 @@ A Python library for converting files to and from their
 video representations.
 
 ## Features
+
 Some of the features of Statica include:
 - Convert files to their video representations and vice versa.
 
@@ -36,3 +37,8 @@ To install and run Statica, follow the following steps:
 1. Ensure that `>=Python3.6.9` is installed.
 2. Install dependencies with `pip3 install -r requirements.txt`.
 3. Build and install Statica with `make clean dist`.
+
+## Running Tests
+
+To run the Pytests, follow the following steps:
+1. Run `make clean test`.
