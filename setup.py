@@ -46,4 +46,10 @@ with open("requirements.txt") as fp:
 setup(
     ext_modules=extensions,
     install_requires=install_requires,
+    extras_require={
+        'test': [
+            'pytest==7.0.1',
+            'pytest-parallel==0.1.1'    
+        ],
+    }
 )
