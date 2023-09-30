@@ -1,3 +1,4 @@
+from pathlib import Path
 import os
 
 import numpy as np
@@ -131,9 +132,13 @@ cdef class FileEncoder:
         video.release()
 
         if to_h264:
-            ffmpeg.input(self._out_file).output(f'tmp_{self._out_file}',
+            out_file_path = Path(self._out_file)
+            temp_out_file_path = out_file_path.with_name('tmp_' + out_file_path.name)
+            temp_out_file_abs_path = str(temp_out_file_path)
+
+            ffmpeg.input(self._out_file).output(temp_out_file_abs_path,
                                                 vcodec='libx264', pix_fmt='yuv420p').global_args('-an').run(overwrite_output=True)
-            os.rename(f'tmp_{self._out_file}', self._out_file)
+            os.rename(temp_out_file_abs_path, self._out_file)
 
     cdef void _set_file_meta(self, video):
         """Sets video meta (e.g. input file length) header for decode process.
